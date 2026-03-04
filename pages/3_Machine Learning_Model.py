@@ -123,7 +123,7 @@ if st.button("🔥 Run AI Prediction") and home_team != away_team:
         away_row = teams[teams["FULL_NAME"] == away_team]
 
         home_id = home_row["TEAM_ID"].values[0]
-        away_id = away_row["TEAM_ID"].values[0]
+        away_id = away_row["TEAM_ID"].values[1]
 
         home_logo = f"https://cdn.nba.com/logos/nba/{home_id}/global/L/logo.svg"
         away_logo = f"https://cdn.nba.com/logos/nba/{away_id}/global/L/logo.svg"
