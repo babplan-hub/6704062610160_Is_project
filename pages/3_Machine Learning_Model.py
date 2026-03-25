@@ -13,11 +13,9 @@ st.markdown("""
 body {
     background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 }
-
 .main {
     background: rgba(0,0,0,0);
 }
-
 .big-title {
     font-size: 48px;
     font-weight: 800;
@@ -25,7 +23,6 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
-
 .card {
     background: rgba(255,255,255,0.06);
     padding: 25px;
@@ -34,26 +31,22 @@ body {
     border: 1px solid rgba(255,255,255,0.15);
     margin-bottom:20px;
 }
-
 .score-card {
     background: rgba(255,255,255,0.08);
     padding: 30px;
     border-radius: 20px;
     text-align: center;
 }
-
 .team-name {
     font-size: 22px;
     font-weight: bold;
     color: white;
 }
-
 .score-number {
     font-size: 64px;
     font-weight: 800;
     color: #ff9966;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -95,7 +88,8 @@ K = 20
 INITIAL_ELO = 1500
 HOME_ADV = 65
 
-def calculate_elo():
+@st.cache_data
+def calculate_elo(games):
     elo = {}
     for _, row in games.iterrows():
         h = row["HOME_TEAM_ID"]
@@ -110,7 +104,7 @@ def calculate_elo():
         elo[a] += K*((1-win)-(1-eh))
     return elo
 
-elo_dict = calculate_elo()
+elo_dict = calculate_elo(games)
 
 # =========================
 # PREDICTION
@@ -118,12 +112,13 @@ elo_dict = calculate_elo()
 if st.button("🔥 Run AI Prediction") and home_team != away_team:
 
     with st.spinner("AI analyzing team performance..."):
-        
+
         home_row = teams[teams["FULL_NAME"] == home_team]
         away_row = teams[teams["FULL_NAME"] == away_team]
 
+        # ✅ FIX index
         home_id = home_row["TEAM_ID"].values[0]
-        away_id = away_row["TEAM_ID"].values[1]
+        away_id = away_row["TEAM_ID"].values[0]
 
         home_logo = f"https://cdn.nba.com/logos/nba/{home_id}/global/L/logo.svg"
         away_logo = f"https://cdn.nba.com/logos/nba/{away_id}/global/L/logo.svg"
@@ -132,6 +127,11 @@ if st.button("🔥 Run AI Prediction") and home_team != away_team:
 
         last_home = games[games["HOME_TEAM_ID"]==home_id].tail(1)
         last_away = games[games["VISITOR_TEAM_ID"]==away_id].tail(1)
+
+        # ✅ กันพัง
+        if last_home.empty or last_away.empty:
+            st.error("Not enough data for prediction")
+            st.stop()
 
         fg_diff = last_home["FG_PCT_home"].values[0] - last_away["FG_PCT_away"].values[0]
         reb_diff = last_home["REB_home"].values[0] - last_away["REB_away"].values[0]
@@ -145,7 +145,7 @@ if st.button("🔥 Run AI Prediction") and home_team != away_team:
         prob = model.predict_proba(X)[0][1]
 
     # =========================
-    # WIN PROBABILITY CARD
+    # WIN PROBABILITY
     # =========================
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📊 AI Win Probability")
